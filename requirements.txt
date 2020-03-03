@@ -1,0 +1,5 @@
+google-auth
+google-auth-oauthlib
+packaging
+google-api-python-client
+progressbar2
