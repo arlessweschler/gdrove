@@ -1,28 +1,57 @@
-import argparse
+from pathlib import Path
+from gdrove import GDrove, get_drive, dtd
+import argparse, json
+
+gd = GDrove()
 
 def do_new_user_account(args):
 
-    print(args)
+    gd.auth_add_user(args.name, args.creds, args.remote)
 
 def do_new_service_account(args):
 
-    print(args)
+    gd.auth_add_sa(args.name, args.creds)
 
 def do_remove_account(args):
 
-    print(args)
+    gd.auth_remove_account(args.name)
+
+def do_list_accounts(args):
+
+    for i in gd.auth_list_accounts():
+        print(f'{i["name"]} ({i["type"]})')
 
 def do_new_alias(args):
 
-    print(args)
+    print(args) # TODO
 
 def do_remove_alias(args):
 
-    print(args)
+    print(args) # TODO
 
 def do_sync(args):
 
-    print(args)
+    creds = gd.auth_get(args.account)
+    if creds == None:
+        return None
+
+    drive = get_drive(creds)
+
+    source_id = gd.get_path(args.source, creds)
+    destination_id = gd.get_path(args.destination, creds)
+
+    if type(source_id) == str:
+        from_drive = True
+    else:
+        from_drive = False
+    
+    if type(destination_id) == str:
+        to_drive = True
+    else:
+        to_drive = False
+
+    if from_drive and to_drive:
+        dtd(drive, source_id, destination_id)
 
 def main():
 
@@ -57,6 +86,10 @@ def main():
     remove_account_config_parser = account_config_subparsers.add_parser("remove", description="Remove account")
     remove_account_config_parser.add_argument("name", help="Name of account")
     remove_account_config_parser.set_defaults(do=do_remove_account)
+
+    # remove account config parser
+    remove_account_config_parser = account_config_subparsers.add_parser("list", description="List accounts")
+    remove_account_config_parser.set_defaults(do=do_list_accounts)
     
     # alias config parser
     alias_config_parser = config_subparsers.add_parser("alias", description="Add path alias")
@@ -79,7 +112,6 @@ def main():
     # parse
     args = parser.parse_args()
     if args.do != None:
-        import gdrove
         args.do(args)
     else:
         print("Please run with -h to see help.")
