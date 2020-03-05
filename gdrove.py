@@ -23,11 +23,20 @@ def do_list_accounts(args):
 
 def do_new_alias(args):
 
-    print(args) # TODO
+    creds = gd.auth_get(args.account)
+    if creds == None:
+        print(f"ERR account {args.account} not found!")
+    else:
+        gd.alias_add(args.name, args.path, creds)
 
 def do_remove_alias(args):
 
-    print(args) # TODO
+    gd.alias_remove(args.name)
+
+def do_list_alias(args):
+
+    for i in gd.alias_list():
+        print(f'{i["name"]} ({i["type"]}): {i["path"]}')
 
 def do_sync(args):
 
@@ -93,14 +102,23 @@ def main():
     
     # alias config parser
     alias_config_parser = config_subparsers.add_parser("alias", description="Add path alias")
-    alias_config_parser.add_argument("name", help="Name of alias")
-    alias_config_parser.add_argument("path", help="Path to alias")
-    alias_config_parser.set_defaults(do=do_new_alias)
+    alias_config_subparsers = alias_config_parser.add_subparsers()
 
-    # unalias config parser
-    unalias_config_parser = config_subparsers.add_parser("unalias", description="Remove path alias")
-    unalias_config_parser.add_argument("name", help="Name of alias")
-    unalias_config_parser.set_defaults(do=do_remove_alias)
+    # add alias config parser
+    add_alias_config_parser = alias_config_subparsers.add_parser("new", description="Create new alias")
+    add_alias_config_parser.add_argument("name", help="Name of alias")
+    add_alias_config_parser.add_argument("path", help="Path to alias")
+    add_alias_config_parser.add_argument("account", help="Account to resolve alias")
+    add_alias_config_parser.set_defaults(do=do_new_alias)
+
+    # remomve alias config parser
+    remove_alias_config_parser = alias_config_subparsers.add_parser("remove", description="Remove alias")
+    remove_alias_config_parser.add_argument("name", help="Name of alias")
+    remove_alias_config_parser.set_defaults(do=do_remove_alias)
+
+    # list alias config parser
+    list_alias_config_parser = alias_config_subparsers.add_parser("list", description="List aliases")
+    list_alias_config_parser.set_defaults(do=do_list_alias)
 
     # sync parser
     sync_parser = subparsers.add_parser("sync", description="Sync folders")

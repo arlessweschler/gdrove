@@ -15,7 +15,7 @@ import json, time, progressbar
 _default_config = {
     "version": __version__,
     "accounts": [],
-    "path_aliases": []
+    "path_aliases": {}
 }
 
 _default_scopes = ["https://www.googleapis.com/auth/drive"]
@@ -39,13 +39,14 @@ class GDrove:
         with config_file.open("r") as f:
             self.config = json.load(f)
         
-        if "version" not in self.config or "accounts" not in self.config or "path_aliases" not in self.config:            
-            if self.confirm("ERR corrupted config, regen? [Y/n] "):
+        if "version" not in self.config or "accounts" not in self.config or "path_aliases" not in self.config or \
+            not isinstance(self.config["version"], str) or not isinstance(self.config["accounts"], list) or \
+            not isinstance(self.config["path_aliases"], dict):            
+            if self.confirm("ERR corrupted config, regen? [Y/n] ", "n"):
                 self.log("WARN regenerating config")
                 self.overwrite_config()
                 with config_file.open("r") as f:
-                    config = json.load(f)
-                self.save_config(config)
+                    self.config = json.load(f)
             else:
                 self.log("QUIT config corrupted!")
                 exit(1)
@@ -56,7 +57,7 @@ class GDrove:
             # handle any version migration
 
             if config_version > program_version:
-                if self.confirm(f"ERR config version ({config_version}) newer than program version ({program_version})! continue? [Y/n] "):
+                if self.confirm(f"ERR config version ({config_version}) newer than program version ({program_version})! continue? [Y/n] ", "n"):
                     self.log("WARN downgrading config!")
                 else:
                     self.log("QUIT program old")
@@ -65,7 +66,7 @@ class GDrove:
                 self.log(f"INFO updating config from {config_version} to {program_version}")
 
             self.config["version"] = __version__
-            self.save_config(config)
+            self.save_config()
     
     def get_path(self, path_string, creds):
 
@@ -108,7 +109,12 @@ class GDrove:
                 current_dir = apicall(drive.files().get(fileId=to_traverse.pop()))["id"]
             
             else:
-                current_dir = apicall(drive.files().get(fileId=self.config["path_aliases"][path_type]))["id"]
+                alias_path = self.config["path_aliases"][path_type]
+
+                if alias_path[0] == "local":
+                    return Path(alias_path[1])
+                else:
+                    current_dir = apicall(drive.files().get(fileId=alias_path[1]))["id"]
             
             while len(to_traverse) != 0:
                 search_for = to_traverse.pop()
@@ -146,9 +152,7 @@ class GDrove:
     
     def overwrite_config(self):
 
-        config_file = self.config_path/"config.json"
-        if not config_file.exists():
-            config_file.write_text(json.dumps(_default_config))
+        (self.config_path/"config.json").write_text(json.dumps(_default_config))
     
     def auth_get(self, name):
 
@@ -200,7 +204,7 @@ class GDrove:
         self.config["accounts"].append({
             "name": name,
             "type": "user",
-            "auth": creds.to_json()
+            "auth": creds.to_json().replace(" ", "")
         })
         self.save_config()
         return creds
@@ -241,7 +245,40 @@ class GDrove:
             if self.authstore[i]["name"] == name:
                 del self.authstore[i]
                 break
+        
+    def alias_add(self, name, path, creds):
+
+        alias_path = self.get_path(path, creds)
+        if alias_path == None:
+            return None
+        elif isinstance(alias_path, Path):
+            self.config["path_aliases"][name] = ["local", alias_path.as_posix()]
+        else:
+            self.config["path_aliases"][name] = ["drive", alias_path]
+
+        self.save_config()
     
+    def alias_remove(self, name):
+
+        if name in self.config["path_aliases"]:
+            del self.config["path_aliases"][name]
+        else:
+            print(f"ERR alias {name} not found")
+        self.save_config()
+    
+    def alias_list(self):
+        
+        aliases = []
+        for i in self.config["path_aliases"]:
+            alias_data = self.config["path_aliases"][i]
+            aliases.append({
+                "name": i,
+                "type": alias_data[0],
+                "path": alias_data[1]
+            })
+
+        return aliases
+
     def save_config(self):
 
         try:
