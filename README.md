@@ -19,4 +19,5 @@ Alias, specified as `alias_name:path/to/some/folder`, uses an alias to show some
 # auth
 To authenticate with gdrove, you'll need to create a `credentials.json` in the directory you're running the program in. This requirement may be lifted in the future, with default credentials supplied. You can use `gdrove config account user acnt_name` to create and authorize a new account named `acnt_name`. You can also create a Serivce Account using `gdrove config account sa acnt_name sa.json` to create a new Serivce Account named `acnt_name` using the Service Account file `sa.json`.
 
-TODO: finish
+# syncing
+To sync, use `gdrove sync account_name source_path destination_path`, with `account_name` being the name of an account, `source_path` being the path to the source folder, and `destination_path` being the path to the destination folder.
