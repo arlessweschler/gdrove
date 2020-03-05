@@ -1,5 +1,5 @@
 # WIP
-GDrove is WIP. Not all features have been implemented.
+GDrove is WIP. Not all features have been implemented. You currently have to run GDrove directly using the included `gdrove.py` file, but in the final release this will be a script that can be accessed from anywhere using the `gdrove` command.
 
 # gdrove
 An RClone-like Google Drive tool to help you sync files to and from your personal computer and between Google Drive folders!
