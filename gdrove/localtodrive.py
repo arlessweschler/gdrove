@@ -1,4 +1,4 @@
-from gdrove.helpers import md5sum, lsfiles, lsfolders, get_files, apicall
+from gdrove.helpers import lsfiles, lsfolders, get_files, apicall
 from googleapiclient.http import MediaFileUpload
 from pathlib import Path
 from datetime import datetime

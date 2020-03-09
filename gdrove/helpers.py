@@ -72,6 +72,7 @@ def get_files(drive, parent):
 
     return [{"id": i["id"], "name": i["name"], "md5": i["md5Checksum"], "modtime": i["modifiedTime"]} for i in lsfiles(drive, parent)]
 
+# TODO: find some way to md5sum while uploading a file to double check that it uploaded with the correct md5
 def md5sum(filename):
     md5 = hashlib.md5()
     with open(filename, 'rb') as f:
