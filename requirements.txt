@@ -3,3 +3,5 @@ google-auth-oauthlib
 packaging
 google-api-python-client
 progressbar2
+pytz
+httplib2==0.15.0

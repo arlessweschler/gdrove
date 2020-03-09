@@ -1,5 +1,5 @@
 from pathlib import Path
-from gdrove import GDrove, get_drive, dtd
+from gdrove import GDrove, get_drive, dtd, ltd
 import argparse, json
 
 gd = GDrove()
@@ -61,6 +61,9 @@ def do_sync(args):
 
     if from_drive and to_drive:
         dtd(drive, source_id, destination_id)
+    
+    elif not from_drive and to_drive:
+        ltd(drive, source_id, destination_id)
 
 def main():
 
@@ -125,6 +128,7 @@ def main():
     sync_parser.add_argument("account", help="Name of account")
     sync_parser.add_argument("source", help="Path to source")
     sync_parser.add_argument("destination", help="Path to destination")
+    sync_parser.add_argument("--yes", "-y", help="Force delete local files")
     sync_parser.set_defaults(do=do_sync)
 
     # parse

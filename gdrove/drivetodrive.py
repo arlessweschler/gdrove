@@ -63,13 +63,15 @@ def sync_directory(drive, sourceid, destid):
     source_files = get_files(drive, sourceid)
     dest_files = get_files(drive, destid)
 
+    source_file = apicall(drive.files().get(fileId=sourceid))
+
     # sets because we don't want to try to delete or copy the same file twice
     to_copy = set()
     to_delete = set()
 
     to_process_length = len(source_files) + len(dest_files)
     count = 0
-    with progressbar.ProgressBar(0, to_process_length, ["processing files ", progressbar.Counter(), "/" + str(to_process_length), " ", progressbar.Bar()]).start() as pbar:
+    with progressbar.ProgressBar(0, to_process_length, ["processing files (" + source_file["name"] + ") ", progressbar.Counter(), "/" + str(to_process_length), " ", progressbar.Bar()]).start() as pbar:
         for source_file in source_files: # check for new files and new file versions
             for dest_file in dest_files:
                 if source_file["name"] == dest_file["name"]: #      if the files have the same name

@@ -1,6 +1,6 @@
 from googleapiclient.discovery import build
 from googleapiclient.errors import HttpError
-import json, time, progressbar
+import json, time, progressbar, hashlib
 
 def get_drive(creds):
     return build("drive", "v3", credentials=creds)
@@ -42,7 +42,7 @@ def ls(drive, folderid, q="", message="directory"):
     i = 0
     with progressbar.ProgressBar(0, progressbar.UnknownLength, widgets=["listing " + message + " " + folderid + " ", progressbar.RotatingMarker()]).start() as pbar:
         while "nextPageToken" in resp:
-            resp = apicall(drive.files().list(pageSize=1000, q=q, supportsAllDrives=True, fields="files(id,name,md5Checksum)"))
+            resp = apicall(drive.files().list(pageSize=1000, q=q, supportsAllDrives=True, fields="files(id,name,md5Checksum,modifiedTime)"))
             files += resp["files"]
             pbar.update(i)
             i += 1
@@ -70,4 +70,11 @@ def lsdrives(drive):
 
 def get_files(drive, parent):
 
-    return [{"id": i["id"], "name": i["name"], "md5": i["md5Checksum"]} for i in lsfiles(drive, parent)]
+    return [{"id": i["id"], "name": i["name"], "md5": i["md5Checksum"], "modtime": i["modifiedTime"]} for i in lsfiles(drive, parent)]
+
+def md5sum(filename):
+    md5 = hashlib.md5()
+    with open(filename, 'rb') as f:
+        for chunk in iter(lambda: f.read(128 * md5.block_size), b''):
+            md5.update(chunk)
+    return md5.hexdigest()

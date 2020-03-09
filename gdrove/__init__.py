@@ -10,6 +10,7 @@ from googleapiclient.errors import HttpError
 from packaging import version
 from gdrove.helpers import apicall, get_drive, ls, lsdrives
 from gdrove.drivetodrive import sync as dtd
+from gdrove.localtodrive import sync as ltd
 import json, time, progressbar
 
 _default_config = {
@@ -116,17 +117,18 @@ class GDrove:
                 else:
                     current_dir = apicall(drive.files().get(fileId=alias_path[1]))["id"]
             
-            while len(to_traverse) != 0:
-                search_for = to_traverse.pop()
-                found = False
-                for i in ls(drive, current_dir):
-                    if i["name"] == search_for:
-                        current_dir = i["id"]
-                        found = True
-                        break
-                if not found:
-                    print(f"couldn't find {search_for}!")
-                    return None
+            if len(to_traverse) != 1 or len(to_traverse[0]) != 0:
+                while len(to_traverse) != 0:
+                    search_for = to_traverse.pop()
+                    found = False
+                    for i in ls(drive, current_dir):
+                        if i["name"] == search_for:
+                            current_dir = i["id"]
+                            found = True
+                            break
+                    if not found:
+                        print(f"couldn't find {search_for}!")
+                        return None
                 
             return current_dir
         
