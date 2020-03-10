@@ -42,7 +42,7 @@ def ls(drive, folderid, q="", message="directory"):
     i = 0
     with progressbar.ProgressBar(0, progressbar.UnknownLength, widgets=["listing " + message + " " + folderid + " ", progressbar.RotatingMarker()]).start() as pbar:
         while "nextPageToken" in resp:
-            resp = apicall(drive.files().list(pageSize=1000, q=q, supportsAllDrives=True, fields="files(id,name,md5Checksum,modifiedTime)"))
+            resp = apicall(drive.files().list(pageSize=1000, q=q, supportsAllDrives=True, fields="files(id,name,md5Checksum,modifiedTime,size)"))
             files += resp["files"]
             pbar.update(i)
             i += 1
@@ -70,7 +70,18 @@ def lsdrives(drive):
 
 def get_files(drive, parent):
 
-    return [{"id": i["id"], "name": i["name"], "md5": i["md5Checksum"], "modtime": i["modifiedTime"]} for i in lsfiles(drive, parent)]
+    return [{"id": i["id"], "name": i["name"], "md5": i["md5Checksum"], "modtime": i["modifiedTime"], "size": int(i["size"])} for i in lsfiles(drive, parent)]
+
+size_markers = ["B", "KB", "MB"]
+def pretty_size(size_bytes):
+
+    marker_index = 0
+    while True:
+        if size_bytes > 1024 and marker_index < len(size_markers):
+            size_bytes /= 1024.0
+            marker_index += 1
+        else:
+            return str(size_bytes) + size_markers[marker_index]
 
 # TODO: find some way to md5sum while uploading a file to double check that it uploaded with the correct md5
 def md5sum(filename):

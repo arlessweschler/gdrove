@@ -11,6 +11,7 @@ from packaging import version
 from gdrove.helpers import apicall, get_drive, ls, lsdrives
 from gdrove.drivetodrive import sync as dtd
 from gdrove.localtodrive import sync as ltd
+from gdrove.drivetolocal import sync as dtl
 import json, time, progressbar
 
 _default_config = {

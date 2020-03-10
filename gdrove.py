@@ -1,5 +1,5 @@
 from pathlib import Path
-from gdrove import GDrove, get_drive, dtd, ltd
+from gdrove import GDrove, get_drive, dtd, ltd, dtl
 import argparse, json
 
 gd = GDrove()
@@ -64,6 +64,9 @@ def do_sync(args):
     
     elif not from_drive and to_drive:
         ltd(drive, source_id, destination_id)
+    
+    elif from_drive and not to_drive:
+        dtl(drive, source_id, destination_id)
 
 def main():
 
