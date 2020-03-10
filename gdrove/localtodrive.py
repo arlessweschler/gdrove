@@ -4,11 +4,11 @@ from pathlib import Path
 from datetime import datetime
 import progressbar, pytz
 
-def get_time_rfc3339(source_file: Path):
+def get_time_rfc3339(source_file):
     source_file_mod_time = datetime.utcfromtimestamp(source_file.stat().st_mtime)
     return source_file_mod_time.isoformat() + "Z"
 
-def upload_resumable(drive, to_upload: Path, parent):
+def upload_resumable(drive, to_upload, parent):
     
     filesize = to_upload.stat().st_size
 
