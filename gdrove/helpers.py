@@ -1,5 +1,6 @@
 from googleapiclient.discovery import build
 from googleapiclient.errors import HttpError
+from pathlib import Path
 import json, time, progressbar, hashlib
 
 def get_drive(creds):
@@ -90,3 +91,68 @@ def md5sum(filename):
         for chunk in iter(lambda: f.read(128 * md5.block_size), b''):
             md5.update(chunk)
     return md5.hexdigest()
+
+def list_path(drive, path_obj):
+    if isinstance(path_obj, Path):
+        return [i for i in path_obj.iterdir() if not i.is_dir()]
+    else:
+        return get_files(drive, path_obj)
+
+def determine_folder(drive, source_dir, dest_dir, compare_function, delete_compare_function, delete_creation=True):
+
+    source_files = list_path(drive, source_dir)
+    dest_files = list_path(drive, dest_dir)
+
+    from_local = isinstance(source_dir, Path)
+    to_local = isinstance(dest_dir, Path)
+
+    if from_local:
+        source_filename = source_dir.name()
+    else:
+        source_filename = apicall(drive.files().get(fileId=source_dir))["name"]
+
+    to_create = set()
+    to_delete = set()
+
+    to_process_length = len(source_files) + len(dest_files)
+    count = 0
+    with progressbar.ProgressBar(0, to_process_length, ["processing files (" + source_filename + ") ", progressbar.Counter(), "/" + str(to_process_length), " ", progressbar.Bar()]).start() as pbar:
+        for source_file in source_files:
+            for dest_file in dest_files:
+                if compare_function(drive, source_file, dest_file):
+                    if from_local:
+                        to_create.add(source_file)
+                        if delete_creation:
+                            to_delete.add(dest_file)
+                    else:
+                        to_create.add(source_file["id"])
+                        if delete_creation:
+                            to_delete.add(dest_file["id"])
+            else:
+                if from_local:
+                    to_create.add(source_file)
+                else:
+                    to_create.add(source_file["id"])
+            count += 1
+            pbar.update(count)
+        
+        for dest_file in dest_files:
+            if to_local:
+                if dest_file in to_delete:
+                    continue
+            else:
+                if dest_file["id"] in to_delete:
+                    continue
+
+            for source_file in source_files:
+                if delete_compare_function(drive, dest_file, source_file):
+                    break
+            else:
+                if to_local:
+                    to_delete.add(dest_file)
+                else:
+                    to_delete.add(dest_file["id"])
+            count += 1
+            pbar.update(count)
+    
+    return to_create, to_delete
