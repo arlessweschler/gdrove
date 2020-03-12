@@ -1,8 +1,8 @@
-# WIP
-GDrove is WIP. Not all features have been implemented. You currently have to run GDrove directly using the included `gdrove.py` file, but in the final release this will be a script that can be accessed from anywhere using the `gdrove` command.
-
 # gdrove
 An RClone-like Google Drive tool to help you sync files to and from your personal computer and between Google Drive folders!
+
+# install
+`pip install gdrove`
 
 # paths
 Paths can be of five types: local (ld), my drive (md), shared drive (sd), file id (fi), and alias.
@@ -24,3 +24,12 @@ To authenticate with gdrove, you'll need to create a `credentials.json` in the d
 
 # syncing
 To sync, use `gdrove sync account_name source_path destination_path`, with `account_name` being the name of an account, `source_path` being the path to the source folder, and `destination_path` being the path to the destination folder.
+
+# TODO
+- Refactor, putting filtering logic in it's own function with a callback/comparison function
+- Implement multithreaded dtd
+- Measure performance benefits of multithreaded ltd and dtl on high bandwidth machines
+- Implement impersonation (not as bad as it sounds, I swear)
+
+# Maybe TODO
+- Implement dtltd (download from drive to local then reupload to other account, for when you want to copy between accounts when only one account has access to each side)
