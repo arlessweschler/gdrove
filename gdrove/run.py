@@ -47,7 +47,11 @@ def do_sync(args):
     drive = get_drive(creds)
 
     source_id = gd.get_path(args.source, creds)
+    if source_id == None:
+        return
     destination_id = gd.get_path(args.destination, creds)
+    if destination_id == None:
+        return
 
     if type(source_id) == str:
         from_drive = True
