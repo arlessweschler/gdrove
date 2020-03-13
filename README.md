@@ -2,7 +2,10 @@
 An RClone-like Google Drive tool to help you sync files to and from your personal computer and between Google Drive folders!
 
 # install
+#### windows
 `pip install gdrove`
+#### linux
+`pip3 install gdrove`
 
 # paths
 Paths can be of five types: local (ld), my drive (md), shared drive (sd), file id (fi), and alias.
