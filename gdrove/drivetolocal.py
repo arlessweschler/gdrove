@@ -1,4 +1,4 @@
-from gdrove.helpers import lsfiles, lsfolders, get_files, apicall, pretty_size
+from gdrove.helpers import lsfiles, lsfolders, get_files, apicall, pretty_size, determine_folder, process_recursively
 from googleapiclient.http import MediaIoBaseDownload
 from pathlib import Path
 from datetime import datetime
@@ -16,49 +16,26 @@ def download_file(drive, sourceid, dest, filename, filesize):
             if status:
                 pbar.update(status.resumable_progress)
 
+def compare_function(drive, source_file, dest_file, dest_dir):
+    if source_file["name"] == dest_file.name:
+        dest_file_mod_time = datetime.utcfromtimestamp(dest_file.stat().st_mtime)
+        dest_file_mod_time_tz = dest_file_mod_time.replace(tzinfo=pytz.UTC)
+        source_file_mod_time = datetime.fromisoformat(source_file["modtime"][:-1] + "+00:00")
+        if source_file_mod_time > dest_file_mod_time_tz:
+            return True, (source_file["id"], dest_dir, source_file["name"], source_file["size"]), None
+        return True, None, None
+    return False, None, None
+
+def new_folder_function(_, folder_name, folder_parent):
+
+    dest_folder = folder_parent / folder_name
+    dest_folder.mkdir(parents=True)
+    return dest_folder
+
 def sync(drive, sourceid, dest):
-
-    to_process = set()
-    to_process.add((sourceid, dest))
-
-    download_jobs = set()
-    delete_jobs = set()
-
-    while len(to_process) > 0:
-
-        print(f"{len(to_process)} folders is queue")
-
-        currently_processing = to_process.pop()
-
-        source_folders = lsfolders(drive, currently_processing[0])
-        dest_folders = [i for i in currently_processing[1].iterdir() if i.is_dir()]
-
-        folders_to_delete = set()
-
-        for source_folder in source_folders:
-            for dest_folder in dest_folders:
-                if source_folder["name"] == dest_folder.name:
-                    to_process.add((source_folder["id"], dest_folder))
-                    break
-            else:
-                print(f"creating new directory \"{source_folder['name']}\" in {currently_processing[1].as_posix()}")
-                dest_folder = dest / source_folder["name"]
-                dest_folder.mkdir(parents=True)
-                to_process.add((source_folder["id"], dest_folder))
-        
-        for dest_folder in dest_folders:
-            for source_folder in source_folders:
-                if source_folder["name"] == dest_folder.name:
-                    break
-            else:
-                folders_to_delete.add((dest_folder, "foldernotinsource"))
-
-        to_download, to_delete = sync_directory(drive, currently_processing[0], currently_processing[1])
-        to_delete.update(folders_to_delete)
-
-        download_jobs.update(to_download)
-        delete_jobs.update(to_delete)
     
+    download_jobs, delete_jobs = process_recursively(drive, sourceid, dest, compare_function, new_folder_function)
+
     if len(download_jobs) > 0:
         for i in download_jobs:
             download_file(drive, i[0], i[1], i[2], i[3])
@@ -85,40 +62,40 @@ def sync(drive, sourceid, dest):
     else:
         print("nothing to delete")
 
-def sync_directory(drive, sourceid, dest):
+# def sync_directory(drive, sourceid, dest):
 
-    source_files = get_files(drive, sourceid)
-    dest_files = [i for i in Path(dest).iterdir() if not i.is_dir()]
+#     source_files = get_files(drive, sourceid)
+#     dest_files = [i for i in Path(dest).iterdir() if not i.is_dir()]
 
-    to_download = set()
-    to_delete = set()
+#     to_download = set()
+#     to_delete = set()
 
-    to_process_length = len(source_files) + len(dest_files)
-    count = 0
-    with progressbar.ProgressBar(0, to_process_length, ["processing files (" + dest.name + ") ", progressbar.Counter(), "/" + str(to_process_length), " ", progressbar.Bar()]).start() as pbar:
-        for source_file in source_files:
-            for dest_file in dest_files:
-                if source_file["name"] == dest_file.name:
-                    dest_file_mod_time = datetime.utcfromtimestamp(dest_file.stat().st_mtime)
-                    dest_file_mod_time_tz = dest_file_mod_time.replace(tzinfo=pytz.UTC)
-                    source_file_mod_time = datetime.fromisoformat(source_file["modtime"][:-1] + "+00:00")
-                    if source_file_mod_time > dest_file_mod_time_tz:
-                        to_download.add((source_file["id"], dest, source_file["name"], source_file["size"]))
-                        break
-                    else:
-                        break
-            else:
-                to_download.add((source_file["id"], dest, source_file["name"], source_file["size"]))
-            count += 1
-            pbar.update(count)
+#     to_process_length = len(source_files) + len(dest_files)
+#     count = 0
+#     with progressbar.ProgressBar(0, to_process_length, ["processing files (" + dest.name + ") ", progressbar.Counter(), "/" + str(to_process_length), " ", progressbar.Bar()]).start() as pbar:
+#         for source_file in source_files:
+#             for dest_file in dest_files:
+#                 if source_file["name"] == dest_file.name:
+#                     dest_file_mod_time = datetime.utcfromtimestamp(dest_file.stat().st_mtime)
+#                     dest_file_mod_time_tz = dest_file_mod_time.replace(tzinfo=pytz.UTC)
+#                     source_file_mod_time = datetime.fromisoformat(source_file["modtime"][:-1] + "+00:00")
+#                     if source_file_mod_time > dest_file_mod_time_tz:
+#                         to_download.add((source_file["id"], dest, source_file["name"], source_file["size"]))
+#                         break
+#                     else:
+#                         break
+#             else:
+#                 to_download.add((source_file["id"], dest, source_file["name"], source_file["size"]))
+#             count += 1
+#             pbar.update(count)
         
-        for dest_file in dest_files:
-            for source_file in source_files:
-                if source_file["name"] == dest_file.name:
-                    break
-            else:
-                to_delete.add((dest_file, "notinsource"))
-            count += 1
-            pbar.update(count)
+#         for dest_file in dest_files:
+#             for source_file in source_files:
+#                 if source_file["name"] == dest_file.name:
+#                     break
+#             else:
+#                 to_delete.add((dest_file, "notinsource"))
+#             count += 1
+#             pbar.update(count)
     
-    return to_download, to_delete
+#     return to_download, to_delete

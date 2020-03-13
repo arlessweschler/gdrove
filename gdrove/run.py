@@ -71,6 +71,9 @@ def do_sync(args):
     
     elif from_drive and not to_drive:
         dtl(drive, source_id, destination_id)
+    
+    elif not from_drive and not to_drive:
+        print("-_-")
 
 def main():
 
