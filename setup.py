@@ -24,7 +24,8 @@ setup(
     ],
     entry_points={
         "console_scripts": [
-            "gdrove = gdrove.run:main"
+            "gdrove = gdrove.run:main",
+            "gd = gdrove.run:main"
         ]
     }
 )
