@@ -1,63 +1,24 @@
-from gdrove.helpers import get_files, lsfolders, apicall, determine_folder
+from gdrove.helpers import get_files, lsfolders, apicall, determine_folder, process_recursively
 import progressbar
 
-def compare_function(drive, source_file, dest_file) -> bool:
+def compare_function(drive, source_file, dest_file, dest_dir):
     if source_file["name"] == dest_file["name"]:
         if source_file["md5"] == dest_file["md5"]:
-            return False
-        else:
-            return True
+            return True, None, None
+        return True, (source_file["id"], dest_dir), dest_file
+    return False, None, None
 
-def delete_compare_function(drive, source_file, dest_file) -> bool:
-    if source_file["name"] == dest_file["name"]:
-        return True
-    else:
-        return False
+def new_folder_function(drive, folder_name, folder_parent):
+
+    return apicall(drive.files().create(body={
+            "mimeType": "application/vnd.google-apps.folder",
+            "name": folder_name,
+            "parents": [folder_parent]
+        }, supportsAllDrives=True))["id"]
 
 def sync(drive, sourceid, destid):
 
-    to_process = set()
-    to_process.add((sourceid, destid))
-
-    copy_jobs = set()
-    delete_jobs = set()
-
-    while len(to_process) > 0:
-
-        print(f"{len(to_process)} folders is queue")
-
-        currently_processing = to_process.pop()
-
-        source_folders = lsfolders(drive, currently_processing[0])
-        dest_folders = lsfolders(drive, currently_processing[1])
-
-        folders_to_delete = set()
-
-        for source_folder in source_folders:
-            for dest_folder in dest_folders:
-                if source_folder["name"] == dest_folder["name"]:
-                    to_process.add((source_folder["id"], dest_folder["id"]))
-                    break
-            else:
-                print(f"creating new directory \"{source_folder['name']}\" in {currently_processing[1]}")
-                to_process.add((source_folder["id"], apicall(drive.files().create(body={
-                    "mimeType": "application/vnd.google-apps.folder",
-                    "name": source_folder["name"],
-                    "parents": [currently_processing[1]]
-                }, supportsAllDrives=True))["id"]))
-        
-        for dest_folder in dest_folders:
-            for source_folder in source_folders:
-                if source_folder["name"] == dest_folder["name"]:
-                    break
-            else:
-                folders_to_delete.add(dest_folder["id"])
-
-        to_copy, to_delete = determine_folder(drive, currently_processing[0], currently_processing[1], compare_function, delete_compare_function)
-        to_delete.update(folders_to_delete)
-
-        copy_jobs.update(set([(i, currently_processing[1]) for i in to_copy]))
-        delete_jobs.update(to_delete)
+    copy_jobs, delete_jobs = process_recursively(drive, sourceid, destid, compare_function, new_folder_function)
     
     if len(copy_jobs) > 0:
         for i in progressbar.progressbar(copy_jobs, widgets=["copying files ", progressbar.Counter(), "/" + str(len(copy_jobs)), " ", progressbar.Bar(), " ", progressbar.AdaptiveETA()]):

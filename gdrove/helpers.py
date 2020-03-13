@@ -97,8 +97,75 @@ def list_path(drive, path_obj):
         return [i for i in path_obj.iterdir() if not i.is_dir()]
     else:
         return get_files(drive, path_obj)
+    
+def item_name(item):
+    if isinstance(item, Path):
+        return item.name
+    else:
+        return item["name"]
 
-def determine_folder(drive, source_dir, dest_dir, compare_function, delete_compare_function, delete_creation=True):
+def item_id(item):
+    if isinstance(item, Path):
+        return item
+    else:
+        return item["id"]
+
+def process_recursively(drive, source_dir, dest_dir, compare_function, new_folder_function):
+
+    from_local = isinstance(source_dir, Path)
+    to_local = isinstance(dest_dir, Path)
+
+    to_process = set()
+    to_process.add((source_dir, dest_dir))
+
+    create_jobs = set()
+    delete_jobs = set()
+
+    while len(to_process) > 0:
+
+        print(f"{len(to_process)} folders is queue")
+
+        currently_processing = to_process.pop()
+
+        if from_local:
+            source_folders = [i for i in currently_processing[0].iterdir() if i.is_dir()]
+        else:
+            source_folders = lsfolders(drive, currently_processing[0])
+
+        if to_local:
+            dest_folders = [i for i in currently_processing[1].iterdir() if i.is_dir()]
+        else:
+            dest_folders = lsfolders(drive, currently_processing[1])
+
+        folders_to_delete = set()
+
+        for source_folder in source_folders:
+            source_folder_name = item_name(source_folder)
+            for dest_folder in dest_folders:
+                if source_folder_name == item_name(dest_folder):
+                    to_process.add((item_id(source_folder), item_id(dest_folder)))
+                    break
+            else:
+                print(f"creating new directory \"{item_name(source_folder)}\" in {currently_processing[1]}")
+                to_process.add((item_id(source_folder), new_folder_function(drive, item_name(source_folder), currently_processing[1])))
+        
+        for dest_folder in dest_folders:
+            dest_folder_name = item_name(dest_folder)
+            for source_folder in source_folders:
+                if item_name(source_folder) == dest_folder_name:
+                    break
+            else:
+                folders_to_delete.add(item_id(dest_folder))
+
+        to_create, to_delete = determine_folder(drive, currently_processing[0], currently_processing[1], compare_function)
+        to_delete.update(folders_to_delete)
+
+        create_jobs.update(to_create)
+        delete_jobs.update(to_delete)
+    
+    return create_jobs, delete_jobs
+
+def determine_folder(drive, source_dir, dest_dir, compare_function):
 
     source_files = list_path(drive, source_dir)
     dest_files = list_path(drive, dest_dir)
@@ -107,7 +174,7 @@ def determine_folder(drive, source_dir, dest_dir, compare_function, delete_compa
     to_local = isinstance(dest_dir, Path)
 
     if from_local:
-        source_filename = source_dir.name()
+        source_filename = source_dir.name
     else:
         source_filename = apicall(drive.files().get(fileId=source_dir))["name"]
 
@@ -119,20 +186,20 @@ def determine_folder(drive, source_dir, dest_dir, compare_function, delete_compa
     with progressbar.ProgressBar(0, to_process_length, ["processing files (" + source_filename + ") ", progressbar.Counter(), "/" + str(to_process_length), " ", progressbar.Bar()]).start() as pbar:
         for source_file in source_files:
             for dest_file in dest_files:
-                if compare_function(drive, source_file, dest_file):
-                    if from_local:
-                        to_create.add(source_file)
-                        if delete_creation:
-                            to_delete.add(dest_file)
-                    else:
-                        to_create.add(source_file["id"])
-                        if delete_creation:
-                            to_delete.add(dest_file["id"])
+                match_found, add_item, delete_item = compare_function(drive, source_file, dest_file, dest_dir)
+                if match_found:
+                    if add_item:
+                        to_create.add(add_item)
+                    if delete_item:
+                        to_delete.add(delete_item)
+                    break
             else:
                 if from_local:
-                    to_create.add(source_file)
+                    to_create.add((source_file, dest_dir))
+                elif to_local: # hacky solution, i know
+                    to_create.add((source_file["id"], dest_dir, source_file["name"], source_file["size"]))
                 else:
-                    to_create.add(source_file["id"])
+                    to_create.add((source_file["id"], dest_dir))
             count += 1
             pbar.update(count)
         
@@ -145,7 +212,16 @@ def determine_folder(drive, source_dir, dest_dir, compare_function, delete_compa
                     continue
 
             for source_file in source_files:
-                if delete_compare_function(drive, dest_file, source_file):
+                if from_local:
+                    source_filename = source_file.name
+                else:
+                    source_filename = source_file["name"]
+                if to_local:
+                    dest_filename = dest_file.name
+                else:
+                    dest_filename = dest_file["name"]
+
+                if source_filename == dest_filename:
                     break
             else:
                 if to_local:

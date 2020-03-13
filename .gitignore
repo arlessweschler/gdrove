@@ -133,3 +133,6 @@ dmypy.json
 
 # Credentials files
 *.json
+
+# Testing
+test*/
