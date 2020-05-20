@@ -1,10 +1,6 @@
 google-auth
 google-auth-oauthlib
 packaging
-google-api-python-client
+google-api-python-client>=1.8.0 # fix allowing any httplib2 to be used; prevents need to pin httplib2
 progressbar2
 pytz
-httplib2==0.15.0 # note: httplib2 must be old
-# httplib2 versions > 0.15 treat 308 as a redirect
-# google's api uses 308 as an indicator that a resumable upload is going
-# httplib2 versions > 0.15 will take google's resumable upload indicator and treat it as a redirect indicator, but error out when it can't redirect
