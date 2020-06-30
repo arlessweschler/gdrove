@@ -29,6 +29,7 @@ To authenticate with gdrove, you'll need to create a `credentials.json` in the d
 To sync, use `gdrove sync account_name source_path destination_path`, with `account_name` being the name of an account, `source_path` being the path to the source folder, and `destination_path` being the path to the destination folder.
 
 # TODO
+- Resumable uploads/downloads
 - Refactor, putting filtering logic in it's own function with a callback/comparison function
 - Implement multithreaded dtd
 - Measure performance benefits of multithreaded ltd and dtl on high bandwidth machines
