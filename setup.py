@@ -15,6 +15,7 @@ setup(
     install_requires=install_requires,
     author="Spazzlo",
     description="A tool allowing you to copy, upload, and download GDrive folders.",
+    long_description=long_description,
     url="https://github.com/Spazzlo/gdrove",
     include_package_data=False,
     classifiers=[
