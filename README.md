@@ -30,10 +30,6 @@ To sync, use `gdrove sync account_name source_path destination_path`, with `acco
 
 # TODO
 - Resumable uploads/downloads
-- Refactor, putting filtering logic in it's own function with a callback/comparison function
 - Implement multithreaded dtd
-- Measure performance benefits of multithreaded ltd and dtl on high bandwidth machines
+- Implement multithreaded ltd/dtl
 - Implement impersonation (not as bad as it sounds, I swear)
-
-# Maybe TODO
-- Implement dtltd (download from drive to local then reupload to other account, for when you want to copy between accounts when only one account has access to each side)
