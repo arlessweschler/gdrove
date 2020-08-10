@@ -1,4 +1,4 @@
-__version__ = '1.1.0'
+__version__ = '1.2.0'
 
 from pathlib import Path
 from google.oauth2 import service_account
@@ -7,6 +7,9 @@ from google.auth.transport.requests import Request
 from google_auth_oauthlib.flow import InstalledAppFlow
 from packaging import version
 from gdrove.helpers import apicall, get_drive, ls, lsdrives
+from gdrove.drivetodrive import sync as dtd
+from gdrove.drivetolocal import sync as dtl
+from gdrove.localtodrive import sync as ltd
 import json
 
 _default_config = {

@@ -171,10 +171,8 @@ def main():
     args = parser.parse_args()
     if args.do != None:
         args.do(args)
-        return 1
     else:
         print('Please run with -h to see help.')
-        return 0
 
 
 if __name__ == '__main__':

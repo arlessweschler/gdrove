@@ -1,7 +1,7 @@
 from gdrove.helpers import lsfiles, lsfolders, get_files, apicall, determine_folder, process_recursively
 from googleapiclient.http import MediaFileUpload
 from pathlib import Path
-from datetime import datetime
+from datetime import datetime, timedelta
 import progressbar
 import pytz
 
@@ -55,6 +55,10 @@ def compare_function(drive, source_file, dest_file, dest_dir):
         source_file_mod_time_tz = source_file_mod_time.replace(tzinfo=pytz.UTC)
         dest_file_mod_time = datetime.fromisoformat(
             dest_file['modtime'][:-1] + '+00:00')
+
+        # deal with low-precision time
+        source_file_mod_time_tz -= timedelta(microseconds=source_file_mod_time_tz.microsecond)
+        dest_file_mod_time -= timedelta(microseconds=dest_file_mod_time.microsecond)
         if source_file_mod_time_tz > dest_file_mod_time:
             return True, (source_file, dest_dir), dest_file['id']
         else:
