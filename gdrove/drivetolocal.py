@@ -1,6 +1,6 @@
-from gdrove.helpers import get_files, apicall, pretty_size, determine_folder
+from gdrove.helpers import get_files, apicall, pretty_size, determine_folder, process_recursively
 from googleapiclient.http import MediaIoBaseDownload
-from datetime import datetime
+from datetime import datetime, timedelta
 import progressbar
 import pytz
 import os
@@ -26,6 +26,10 @@ def compare_function(drive, source_file, dest_file, dest_dir):
         dest_file_mod_time_tz = dest_file_mod_time.replace(tzinfo=pytz.UTC)
         source_file_mod_time = datetime.fromisoformat(
             source_file['modtime'][:-1] + '+00:00')
+
+        # deal with low-precision time
+        source_file_mod_time -= timedelta(microseconds=source_file_mod_time.microsecond)
+        dest_file_mod_time_tz -= timedelta(microseconds=dest_file_mod_time_tz.microsecond)
         if source_file_mod_time > dest_file_mod_time_tz:
             return True, (source_file['id'], dest_dir, source_file['name'], source_file['size']), None
         return True, None, None
@@ -70,41 +74,3 @@ def sync(drive, sourceid, dest):
                 os.remove(i[0])
     else:
         print('nothing to delete')
-
-# def sync_directory(drive, sourceid, dest):
-
-#     source_files = get_files(drive, sourceid)
-#     dest_files = [i for i in Path(dest).iterdir() if not i.is_dir()]
-
-#     to_download = set()
-#     to_delete = set()
-
-#     to_process_length = len(source_files) + len(dest_files)
-#     count = 0
-#     with progressbar.ProgressBar(0, to_process_length, ['processing files (' + dest.name + ') ', progressbar.Counter(), '/' + str(to_process_length), ' ', progressbar.Bar()]).start() as pbar:
-#         for source_file in source_files:
-#             for dest_file in dest_files:
-#                 if source_file['name'] == dest_file.name:
-#                     dest_file_mod_time = datetime.utcfromtimestamp(dest_file.stat().st_mtime)
-#                     dest_file_mod_time_tz = dest_file_mod_time.replace(tzinfo=pytz.UTC)
-#                     source_file_mod_time = datetime.fromisoformat(source_file['modtime'][:-1] + '+00:00')
-#                     if source_file_mod_time > dest_file_mod_time_tz:
-#                         to_download.add((source_file['id'], dest, source_file['name'], source_file['size']))
-#                         break
-#                     else:
-#                         break
-#             else:
-#                 to_download.add((source_file['id'], dest, source_file['name'], source_file['size']))
-#             count += 1
-#             pbar.update(count)
-
-#         for dest_file in dest_files:
-#             for source_file in source_files:
-#                 if source_file['name'] == dest_file.name:
-#                     break
-#             else:
-#                 to_delete.add((dest_file, 'notinsource'))
-#             count += 1
-#             pbar.update(count)
-
-#     return to_download, to_delete
