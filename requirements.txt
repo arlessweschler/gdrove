@@ -1,6 +1,7 @@
 google-auth
 google-auth-oauthlib
 packaging
-google-api-python-client>=1.8.0 # fix allowing any httplib2 to be used; prevents need to pin httplib2
+google-api-python-client>=1.8.0 # prevents need to pin httplib2
 progressbar2
 pytz
+aiohttp

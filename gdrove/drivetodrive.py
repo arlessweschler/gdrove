@@ -1,5 +1,57 @@
-from gdrove.helpers import get_files, lsfolders, apicall, determine_folder, process_recursively
+from gdrove.common import apicall, determine_folder, process_recursively
+from gdrove.helpers import get_files, lsfolders
+from google.oauth2.credentials import Credentials
 import progressbar
+import aiohttp
+import asyncio
+
+
+class GDException(Exception):
+
+    def __init__(self, data: dict, resp: aiohttp.ClientResponse):
+
+        super(GDException, self).__init__()
+        self.reason = data['error']['errors'][0]['reason']
+        self.url = resp.url
+
+    def __str__(self) -> str:
+
+        return f'{self.reason} error while requesting {self.url}'
+
+async def copy_file(creds: Credentials, source_file: str, target_folder: str):
+
+    auth_headers = {}
+    creds.apply(auth_headers)
+    async with aiohttp.ClientSession(headers=auth_headers) as session:
+        for i in range(5):
+            await asyncio.sleep(2**i)
+            async with session.post(f'https://www.googleapis.com/drive/v3/files/{source_file}/copy', params={
+                'supportsAllDrives': 'true'
+            }, json={
+                'parents': [target_folder]
+            }) as response:
+                data = await response.json()
+
+                if response.status >= 400:
+                    retryable = False
+
+                    if response.status == 403: # could be retryable
+                        if data['error']['errors'][0]['reason'] == 'userRateLimitExceeded':
+                            retryable = True
+
+                    if response.status == 429: # ratelimit
+                        retryable = True
+
+                    if response.status >= 500: # internal error
+                        retryable = True
+
+                    if retryable:
+                        continue
+                    else:
+                        raise GDException(data, response)
+
+                else:
+                    return data
 
 
 def compare_function(drive, source_file, dest_file, dest_dir):
