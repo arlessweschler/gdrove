@@ -30,7 +30,9 @@ To sync, use `gdrove sync account_name source_path destination_path`, with `acco
 
 # TODO
 - Resumable uploads/downloads
+- Force create target folders
 - Global credentials files
-- Multithreaded dtd (async)
 - Multithreaded ltd/dtl
 - Impersonation (not as bad as it sounds, I swear)
+- Use mass service accounts to copy files faster
+- Command line piping concept

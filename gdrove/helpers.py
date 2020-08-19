@@ -1,8 +1,36 @@
+from googleapiclient.errors import HttpError
 from googleapiclient.discovery import build
 from pathlib import Path
 import time
 import progressbar
 import hashlib
+
+
+def apicall(req):
+    sleep_time = 2
+    tries = 0
+    resp = None
+    while resp == None:
+        try:
+            resp = req.execute()
+        except HttpError as e:
+            print(e.error_details)
+            if tries == 3:
+                print('WARN request erroring, please wait up to 5 minutes')
+            if tries == 7:
+                print('ERR stopped retrying on error')
+                raise e
+                break
+            time.sleep(sleep_time)
+            tries += 1
+            sleep_time *= 2
+
+    if resp:
+        if tries > 3:
+            print('INFO erroring request went through')
+        return resp
+    else:
+        return None
 
 
 def get_drive(creds):
@@ -69,10 +97,8 @@ def pretty_size(size_bytes):
         else:
             return str(size_bytes) + size_markers[marker_index]
 
-# TODO: find some way to md5sum while uploading a file to double check that it uploaded with the correct md5
 
-
-def md5sum(filename):
+def md5sum(filename): # TODO: find some way to md5sum while uploading a file to double check that it uploaded with the correct md5
     md5 = hashlib.md5()
     with open(filename, 'rb') as f:
         for chunk in iter(lambda: f.read(128 * md5.block_size), b''):

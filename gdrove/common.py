@@ -1,34 +1,6 @@
-from googleapiclient.errors import HttpError
 from pathlib import Path
-import time
+from gdrove.helpers import lsfolders, item_name, item_id, list_path, apicall
 import progressbar
-
-
-def apicall(req):
-    sleep_time = 2
-    tries = 0
-    resp = None
-    while resp == None:
-        try:
-            resp = req.execute()
-        except HttpError as e:
-            print(e.error_details)
-            if tries == 3:
-                print('WARN request erroring, please wait up to 5 minutes')
-            if tries == 7:
-                print('ERR stopped retrying on error')
-                raise e
-                break
-            time.sleep(sleep_time)
-            tries += 1
-            sleep_time *= 2
-
-    if resp:
-        if tries > 3:
-            print('INFO erroring request went through')
-        return resp
-    else:
-        return None
 
 
 def process_recursively(drive, source_dir, dest_dir, compare_function, new_folder_function):

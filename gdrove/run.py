@@ -73,7 +73,7 @@ def do_sync(args):
         to_drive = False
 
     if from_drive and to_drive:
-        dtd(drive, source_id, destination_id)
+        dtd(creds, source_id, destination_id)
 
     elif not from_drive and to_drive:
         ltd(drive, source_id, destination_id)
