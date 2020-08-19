@@ -73,34 +73,25 @@ async def copy_file(creds: Credentials, source_file: str, target_folder: str):
                     return data
 
 
-async def prune_completed(tasks):
-
-    i = 0
-    while i < len(tasks):
-        if not tasks[i].cr_running:
-            await tasks[i]
-            del tasks[i]
-        else:
-            i += 1
-
 async def async_copy(creds, copy_jobs):
 
-    copy_tasks = []
+    copy_tasks = set()
     i = 0
     with progressbar.ProgressBar(max_value=len(copy_jobs), widgets=['copying files ', progressbar.Counter(), '/' + str(len(copy_jobs)), ' ', progressbar.Bar(), ' ', progressbar.AdaptiveETA()]) as pbar:
         while len(copy_jobs) > 0 or len(copy_tasks) > 0:
-            while len(copy_tasks) > 10:
-                await prune_completed(copy_tasks)
-                await asyncio.sleep(0.1)
+            if len(copy_tasks) > 10:
+                _, copy_tasks = await asyncio.wait(copy_tasks, return_when=asyncio.FIRST_COMPLETED)
+                i += 1
+                pbar.update(i)
             if len(copy_jobs) == 0:
                 while len(copy_tasks) > 0:
-                    await prune_completed(copy_tasks)
-                    await asyncio.sleep(0.1)
+                    _, copy_tasks = await asyncio.wait(copy_tasks, return_when=asyncio.FIRST_COMPLETED)
+                    i += 1
+                    pbar.update(i)
                 break
             new_copy = copy_jobs.pop()
-            copy_tasks.append(copy_file(creds, new_copy[0], new_copy[1]))
-            i += 1
-            pbar.update(i)
+            copy_tasks.add(copy_file(creds, new_copy[0], new_copy[1]))
+
 
 def sync(creds, sourceid, destid):
 
@@ -110,6 +101,7 @@ def sync(creds, sourceid, destid):
         drive, sourceid, destid, compare_function, new_folder_function)
 
     if len(copy_jobs) > 0:
+        copy_tasks = []
         asyncio.run(async_copy(creds, copy_jobs))
     else:
         print('nothing to copy')
