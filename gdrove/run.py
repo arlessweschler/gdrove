@@ -1,7 +1,6 @@
 from pathlib import Path
 from gdrove import GDrove, get_drive, dtd, ltd, dtl
 import argparse
-import json
 
 gd = GDrove()
 

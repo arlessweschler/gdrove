@@ -98,14 +98,6 @@ def pretty_size(size_bytes):
             return str(size_bytes) + size_markers[marker_index]
 
 
-def md5sum(filename): # TODO: find some way to md5sum while uploading a file to double check that it uploaded with the correct md5
-    md5 = hashlib.md5()
-    with open(filename, 'rb') as f:
-        for chunk in iter(lambda: f.read(128 * md5.block_size), b''):
-            md5.update(chunk)
-    return md5.hexdigest()
-
-
 def list_path(drive, path_obj):
     if isinstance(path_obj, Path):
         return [i for i in path_obj.iterdir() if not i.is_dir()]
