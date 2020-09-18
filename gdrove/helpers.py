@@ -48,7 +48,7 @@ def ls(drive, folderid, q='', message='directory'):
     i = 0
     with progressbar.ProgressBar(0, progressbar.UnknownLength, widgets=['listing ' + message + ' ' + folderid + ' ', progressbar.RotatingMarker()]).start() as pbar:
         while 'nextPageToken' in resp:
-            resp = apicall(drive.files().list(pageSize=1000, q=q, supportsAllDrives=True,
+            resp = apicall(drive.files().list(pageSize=1000, q=q, supportsAllDrives=True, includeItemsFromAllDrives=True,
                                               fields='files(id,name,md5Checksum,modifiedTime,size)'))
             files += resp['files']
             pbar.update(i)

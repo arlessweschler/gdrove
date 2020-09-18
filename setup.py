@@ -1,4 +1,3 @@
-from sys import platform
 from setuptools import setup, find_packages
 from gdrove import __version__
 
@@ -14,6 +13,7 @@ setup(
     packages=find_packages(),
     install_requires=install_requires,
     author="Spazzlo",
+    author_email='spazzlospazzilo@gmail.com',
     description="A tool allowing you to copy, upload, and download GDrive folders.",
     long_description=long_description,
     long_description_content_type="text/markdown",
