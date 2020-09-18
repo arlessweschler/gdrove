@@ -1,3 +1,6 @@
+# hiatus
+This tool is currently not in active development, but will return faster and better than ever in the future. If any bugs come up, or simple feature requests, I will add them. Other than that, all development will be in a written version, entirely using asynchronous code.
+
 # gdrove
 An RClone-like Google Drive tool to help you sync files to and from your personal computer and between Google Drive folders!
 
